@@ -1,5 +1,5 @@
 
-package com.acainfo.backendclaude.dto;
+package com.acainfo.backendclaude.dto.major;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -7,11 +7,11 @@ import lombok.Builder;
 import lombok.Value;
 
 /**
- * DTO para crear un nuevo Major
+ * DTO para actualizar un Major existente
  */
 @Value
 @Builder
-public class MajorCreateDto {
+public class MajorUpdateDto {
 
     @NotBlank(message = "Name cannot be empty")
     @Size(max = 255, message = "Name cannot exceed 255 characters")

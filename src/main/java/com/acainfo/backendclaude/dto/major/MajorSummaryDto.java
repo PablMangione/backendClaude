@@ -1,4 +1,4 @@
-package com.acainfo.backendclaude.dto;
+package com.acainfo.backendclaude.dto.major;
 
 import lombok.Builder;
 import lombok.Value;

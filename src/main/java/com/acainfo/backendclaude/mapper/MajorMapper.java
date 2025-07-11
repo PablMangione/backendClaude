@@ -1,6 +1,6 @@
 package com.acainfo.backendclaude.mapper;
 
-import com.acainfo.backendclaude.dto.*;
+import com.acainfo.backendclaude.dto.major.*;
 import com.acainfo.backendclaude.model.Major;
 import com.acainfo.backendclaude.model.Student;
 import com.acainfo.backendclaude.model.Subject;

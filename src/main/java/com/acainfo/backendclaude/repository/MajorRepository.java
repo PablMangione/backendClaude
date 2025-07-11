@@ -1,6 +1,6 @@
 package com.acainfo.backendclaude.repository;
 
-import com.acainfo.backendclaude.dto.MajorSummaryDto;
+import com.acainfo.backendclaude.dto.major.MajorSummaryDto;
 import com.acainfo.backendclaude.model.Major;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
