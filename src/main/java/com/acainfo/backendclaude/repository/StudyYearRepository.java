@@ -140,7 +140,7 @@ public interface StudyYearRepository extends JpaRepository<StudyYear, Integer> {
              FROM subjects sub2
              WHERE sub2.study_year_id = sy.id)                         AS avgSubjectPrice
         FROM study_years sy
-        ORDER BY sy.level ASC
+        ORDER BY sy.level
         """,
             nativeQuery = true
     )
