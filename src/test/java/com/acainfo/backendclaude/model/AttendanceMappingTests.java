@@ -390,23 +390,21 @@ class AttendanceMappingTests {
     void shouldHandleAllAttendanceStatusValues() {
         // Given
         Student student = createAndPersistStudent("karen@example.com", "Karen White");
+        int i=1;
         SessionInstance sessionInstance = createAndPersistSessionInstance();
-
         for (Attendance.AttendanceStatus status : Attendance.AttendanceStatus.values()) {
             // Create new session instance for each test to avoid unique constraint
             SessionInstance newInstance = SessionInstance.builder()
                     .session(sessionInstance.getSession())
-                    .sessionDate(LocalDate.now().plusDays(status.ordinal()))
+                    .sessionDate(LocalDate.now().plusDays(status.ordinal()+i))
                     .status(SessionInstance.SessionStatus.SCHEDULED)
                     .build();
             em.persist(newInstance);
-
             Attendance attendance = Attendance.builder()
                     .student(student)
                     .sessionInstance(newInstance)
                     .status(status)
                     .build();
-
             // When
             em.persist(attendance);
             em.flush();
@@ -414,6 +412,7 @@ class AttendanceMappingTests {
             // Then
             assertEquals(status, attendance.getStatus());
             em.clear();
+            i++;
         }
     }
 
