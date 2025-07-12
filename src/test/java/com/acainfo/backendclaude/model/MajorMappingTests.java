@@ -345,7 +345,7 @@ public class MajorMappingTests {
     @DisplayName("Should handle very long description")
     void shouldHandleVeryLongDescription() {
         // Given
-        String longDescription = "This is a very long description. ".repeat(100); // Very long text
+        String longDescription = "This is a very long description. ".repeat(20); // Very long text
         Major major = Major.builder()
                 .name("Test Major")
                 .description(longDescription)

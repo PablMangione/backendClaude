@@ -227,7 +227,7 @@ class IncidentMappingTests {
                 .build();
 
         // When & Then
-        assertThrows(ConstraintViolationException.class, () -> {
+        assertThrows(org.hibernate.exception.ConstraintViolationException.class, () -> {
             em.persist(incident);
             em.flush();
         });
@@ -354,7 +354,7 @@ class IncidentMappingTests {
     void shouldHandleLongDescription() {
         // Given
         SessionInstance sessionInstance = createAndPersistSessionInstance();
-        String longDescription = "This is a very detailed incident report. ".repeat(100);
+        String longDescription = "This is a very detailed incident report. ".repeat(20);
 
         Incident incident = Incident.builder()
                 .sessionInstance(sessionInstance)

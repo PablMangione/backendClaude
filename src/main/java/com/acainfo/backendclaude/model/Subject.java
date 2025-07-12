@@ -48,8 +48,9 @@ public class Subject {
     @Column(name = "monthly_price", nullable = false)
     private Integer monthlyPrice;
 
-    @Lob
-    @Column(name = "description")
+    // CAMBIO: Removemos @Lob y especificamos un tamaño máximo
+    @Size(max = 1000) // O el tamaño que necesites
+    @Column(name = "description", length = 1000)
     private String description;
 
     @ColumnDefault("CURRENT_TIMESTAMP")

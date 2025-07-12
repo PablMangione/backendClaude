@@ -35,9 +35,9 @@ public class Incident {
     @Column(name = "incident_type", nullable = false)
     private IncidentType incidentType = IncidentType.OTHER;
 
-    @NotNull
-    @Lob
-    @Column(name = "description", nullable = false)
+    // CAMBIO: Removemos @Lob y especificamos un tamaño máximo
+    @Size(max = 1000) // O el tamaño que necesites
+    @Column(name = "description", length = 1000,nullable = false)
     private String description;
 
     @Size(max = 255)

@@ -512,7 +512,7 @@ class SubjectMappingTests {
         em.persist(major);
         em.persist(year);
 
-        String longDescription = "This is a comprehensive course that covers ".repeat(100);
+        String longDescription = "This is a comprehensive course that covers ".repeat(20);
 
         Subject subject = Subject.builder()
                 .name("World Literature")
