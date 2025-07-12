@@ -11,7 +11,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -154,7 +157,7 @@ class MajorRepositoryTest {
 
     @Test
     @DisplayName("Debe calcular correctamente los ingresos mensuales estimados por major")
-    void testFindAllMajorsWithSubjectStats_PriceSum() {
+    void testFindAllMajorsWithSubjectStats_count() {
         // When: Obtenemos majors con estadísticas de materias
         List<MajorRevenueDto> result = majorRepository.findAllMajorsWithSubjectStats();
 
@@ -163,4 +166,201 @@ class MajorRepositoryTest {
 
     }
 
+    @Test
+    @DisplayName("Debe verificar existencia de major por nombre exacto (case-insensitive)")
+    void testExistsByNameIgnoreCase() {
+        // When & Then: Existe
+        assertThat(majorRepository.existsByNameIgnoreCase("Medicina")).isTrue();
+        assertThat(majorRepository.existsByNameIgnoreCase("MEDICINA")).isTrue();
+        assertThat(majorRepository.existsByNameIgnoreCase("medicina")).isTrue();
+
+        // When & Then: No existe
+        assertThat(majorRepository.existsByNameIgnoreCase("Arquitectura")).isFalse();
+        assertThat(majorRepository.existsByNameIgnoreCase("Medicin")).isFalse(); // Parcial no cuenta
+    }
+
+    @Test
+    @DisplayName("Debe encontrar major por nombre exacto (case-insensitive)")
+    void testFindByNameIgnoreCase() {
+        // When: Buscamos con diferentes casos
+        Optional<Major> result1 = majorRepository.findByNameIgnoreCase("Ingeniería Informática");
+        Optional<Major> result2 = majorRepository.findByNameIgnoreCase("INGENIERÍA INFORMÁTICA");
+        Optional<Major> result3 = majorRepository.findByNameIgnoreCase("ingeniería informática");
+
+        // Then: Todos encuentran el mismo major
+        assertThat(result1).isPresent();
+        assertThat(result2).isPresent();
+        assertThat(result3).isPresent();
+        assertThat(result1.get().getId()).isEqualTo(1);
+
+        // When: Buscamos algo que no existe
+        Optional<Major> noResult = majorRepository.findByNameIgnoreCase("No Existe");
+
+        // Then: Empty
+        assertThat(noResult).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Debe contar estudiantes activos por major ID")
+    void testCountActiveStudentsByMajorId() {
+        // When & Then
+        assertThat(majorRepository.countActiveStudentsByMajorId(1)).isEqualTo(3L); // Informática
+        assertThat(majorRepository.countActiveStudentsByMajorId(2)).isEqualTo(2L); // Medicina
+        assertThat(majorRepository.countActiveStudentsByMajorId(3)).isEqualTo(1L); // Derecho
+        assertThat(majorRepository.countActiveStudentsByMajorId(4)).isEqualTo(4L); // Industrial
+        assertThat(majorRepository.countActiveStudentsByMajorId(5)).isEqualTo(0L); // Psicología
+    }
+
+    @Test
+    @DisplayName("Debe encontrar solo majors con estudiantes activos")
+    void testFindMajorsWithActiveStudents() {
+        // When
+        List<Major> result = majorRepository.findMajorsWithActiveStudents();
+
+        // Then: Solo 4 majors tienen estudiantes activos (Psicología no)
+        assertThat(result).hasSize(4);
+        assertThat(result)
+                .extracting(Major::getName)
+                .containsExactly(
+                        "Derecho",
+                        "Ingeniería Industrial",
+                        "Ingeniería Informática",
+                        "Medicina"
+                ); // Orden alfabético
+    }
+
+    @Test
+    @DisplayName("Debe encontrar majors sin estudiantes")
+    void testFindMajorsWithoutStudents() {
+        // When
+        List<Major> result = majorRepository.findMajorsWithoutStudents();
+
+        // Then: Solo Psicología no tiene estudiantes
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getName()).isEqualTo("Psicología");
+    }
+
+    @Test
+    @DisplayName("Debe contar materias por major ID")
+    void testCountSubjectsByMajorId() {
+        // When & Then
+        assertThat(majorRepository.countSubjectsByMajorId(1)).isEqualTo(3L); // Informática tiene 3
+        assertThat(majorRepository.countSubjectsByMajorId(2)).isEqualTo(2L); // Medicina tiene 2
+        assertThat(majorRepository.countSubjectsByMajorId(3)).isEqualTo(2L); // Derecho tiene 2
+        assertThat(majorRepository.countSubjectsByMajorId(4)).isEqualTo(2L); // Industrial tiene 2
+        assertThat(majorRepository.countSubjectsByMajorId(5)).isEqualTo(0L); // Psicología no tiene
+    }
+
+    @Test
+    @DisplayName("Debe obtener majors ordenados por fecha de creación descendente")
+    void testFindAllByOrderByCreatedAtDesc() {
+        // When
+        List<Major> result = majorRepository.findAllByOrderByCreatedAtDesc();
+
+        // Then: Todos deben estar en orden (en test-data.sql todos tienen CURRENT_TIMESTAMP)
+        assertThat(result).hasSize(5);
+        // Como todos se crean al mismo tiempo, verificamos que al menos están todos
+        assertThat(result)
+                .extracting(Major::getName)
+                .containsExactlyInAnyOrder(
+                        "Ingeniería Informática",
+                        "Medicina",
+                        "Derecho",
+                        "Ingeniería Industrial",
+                        "Psicología"
+                );
+    }
+
+    @Test
+    @DisplayName("Debe encontrar majors creados después de una fecha")
+    void testFindMajorsCreatedAfter() {
+        // Given: Una fecha de hace 1 hora
+        Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+
+        // When
+        List<Major> result = majorRepository.findMajorsCreatedAfter(oneHourAgo);
+
+        // Then: Todos los majors fueron creados recientemente
+        assertThat(result).hasSize(5);
+
+        // Given: Una fecha futura
+        Instant tomorrow = Instant.now().plus(1, ChronoUnit.DAYS);
+
+        // When
+        List<Major> noResults = majorRepository.findMajorsCreatedAfter(tomorrow);
+
+        // Then: No hay majors del futuro
+        assertThat(noResults).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Debe encontrar el major más popular")
+    void testFindMostPopularMajor() {
+        // When
+        Optional<Major> result = majorRepository.findMostPopularMajor();
+
+        // Then: Industrial con 4 estudiantes activos
+        assertThat(result).isPresent();
+        assertThat(result.get().getName()).isEqualTo("Ingeniería Industrial");
+    }
+
+    @Test
+    @DisplayName("Debe contar majors con mínimo N estudiantes activos")
+    void testCountMajorsWithMinimumActiveStudents() {
+        // When & Then
+        assertThat(majorRepository.countMajorsWithMinimumActiveStudents(1L)).isEqualTo(4L); // Todos menos Psicología
+        assertThat(majorRepository.countMajorsWithMinimumActiveStudents(2L)).isEqualTo(3L); // Industrial, Informática, Medicina
+        assertThat(majorRepository.countMajorsWithMinimumActiveStudents(3L)).isEqualTo(2L); // Industrial, Informática
+        assertThat(majorRepository.countMajorsWithMinimumActiveStudents(4L)).isEqualTo(1L); // Solo Industrial
+        assertThat(majorRepository.countMajorsWithMinimumActiveStudents(5L)).isEqualTo(0L); // Ninguno tiene 5 o más
+    }
+
+    @Test
+    @DisplayName("Debe calcular correctamente los datos básicos de majors")
+    void testFindAllMajorsWithSubjectStats_BasicData() {
+        // When
+        List<MajorRevenueDto> result = majorRepository.findAllMajorsWithSubjectStats();
+
+        // Then: Verificamos tamaño
+        assertThat(result).hasSize(5);
+
+        // Verificamos que los datos básicos están correctos
+        // NOTA: El revenue en esta versión es simplificado (suma de precios sin multiplicar por estudiantes)
+
+        // Verificamos estudiantes activos y materias para cada major
+        MajorRevenueDto informatica = result.stream()
+                .filter(dto -> dto.name().equals("Ingeniería Informática"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(informatica.totalActiveStudents()).isEqualTo(3L);
+        assertThat(informatica.totalSubjects()).isEqualTo(3);
+
+        MajorRevenueDto medicina = result.stream()
+                .filter(dto -> dto.name().equals("Medicina"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(medicina.totalActiveStudents()).isEqualTo(2L);
+        assertThat(medicina.totalSubjects()).isEqualTo(2);
+
+        MajorRevenueDto derecho = result.stream()
+                .filter(dto -> dto.name().equals("Derecho"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(derecho.totalActiveStudents()).isEqualTo(1L);
+        assertThat(derecho.totalSubjects()).isEqualTo(2);
+
+        MajorRevenueDto industrial = result.stream()
+                .filter(dto -> dto.name().equals("Ingeniería Industrial"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(industrial.totalActiveStudents()).isEqualTo(4L);
+        assertThat(industrial.totalSubjects()).isEqualTo(2);
+
+        MajorRevenueDto psicologia = result.stream()
+                .filter(dto -> dto.name().equals("Psicología"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(psicologia.totalActiveStudents()).isEqualTo(0L);
+        assertThat(psicologia.totalSubjects()).isEqualTo(0);
+    }
 }
